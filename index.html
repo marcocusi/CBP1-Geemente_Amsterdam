@@ -1,0 +1,1059 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Amsterdam Metropolitan Region</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+
+<style>
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: #faf9f6;
+  color: #26352b;
+  font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+section {
+  padding: 80px max(24px, calc((100% - 1100px)/2));
+}
+
+h1, h2, p { margin-top: 0; }
+
+h1 {
+  font-size: clamp(36px, 5vw, 64px);
+  letter-spacing: -2px;
+  line-height: 1.04;
+  max-width: 800px;
+}
+
+h2 { letter-spacing: -.7px; }
+
+p {
+  color: #737970;
+  line-height: 1.8;
+  max-width: 700px;
+}
+
+.eyebrow {
+  color: #718b74;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  font-size: 11px;
+  font-weight: 700;
+  margin-bottom: 18px;
+}
+
+.map-section {
+  position: relative;
+  width: 100%;
+  height: min(82vh, 850px);
+  min-height: 600px;
+  padding: 0;
+  overflow: hidden;
+  background: #f7f6f1;
+  border-top: 1px solid #e9e7df;
+  border-bottom: 1px solid #e9e7df;
+}
+
+#map {
+  position: absolute;
+  inset: 0;
+  background: #f7f6f1;
+}
+
+.leaflet-container {
+  background: #f7f6f1;
+  font-family: inherit;
+}
+
+.leaflet-control-attribution { display: none; }
+
+.map-heading {
+  position: absolute;
+  z-index: 800;
+  top: 22px;
+  left: 22px;
+  max-width: 330px;
+  padding: 20px 22px;
+  background: rgba(255,255,255,.95);
+  border: 1px solid #efeee8;
+  border-radius: 17px;
+  box-shadow: 0 8px 28px #26352b0c;
+  pointer-events: none;
+}
+
+.map-heading h2 {
+  margin: 0 0 8px;
+  font-size: 20px;
+}
+
+.map-heading p {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.map-hint {
+  position: absolute;
+  z-index: 800;
+  bottom: 22px;
+  left: 22px;
+  padding: 12px 16px;
+  border-radius: 12px;
+  background: white;
+  color: #687568;
+  font-size: 12px;
+  box-shadow: 0 5px 20px #26352b0c;
+  pointer-events: none;
+}
+
+.soil-legend {
+  position: absolute;
+  z-index: 810;
+  bottom: 68px;
+  left: 22px;
+  width: 250px;
+  max-height: 330px;
+  overflow-y: auto;
+  padding: 16px 18px;
+  background: rgba(255,255,255,.97);
+  border: 1px solid #efeee8;
+  border-radius: 15px;
+  box-shadow: 0 5px 20px #26352b0c;
+}
+
+.soil-legend h3 {
+  margin: 0 0 5px;
+  font-size: 13px;
+}
+
+.legend-subtitle {
+  color: #92978e;
+  font-size: 10px;
+  margin-bottom: 12px;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin: 3px 0;
+  padding: 7px 8px;
+  border-radius: 8px;
+  color: #687568;
+  font-size: 11px;
+  line-height: 1.4;
+  cursor: pointer;
+  transition: background .2s ease, color .2s ease;
+}
+
+.legend-item:hover,
+.legend-item.active {
+  background: #f0f3ed;
+  color: #344d37;
+}
+
+.legend-item.active {
+  box-shadow: inset 0 0 0 1px #dce5d8;
+}
+
+.legend-item:focus-visible {
+  outline: 2px solid #8fa78f;
+  outline-offset: 2px;
+}
+
+.legend-swatch {
+  flex: 0 0 13px;
+  width: 13px;
+  height: 13px;
+  border-radius: 4px;
+  border: 1px solid #26352b22;
+}
+
+.legend-count {
+  margin-left: auto;
+  color: #a0a69c;
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+}
+
+.soil-tooltip {
+  position: absolute;
+  z-index: 820;
+  top: 22px;
+  right: 22px;
+  width: 310px;
+  max-height: calc(100% - 44px);
+  overflow-y: auto;
+  padding: 21px;
+  background: rgba(255,255,255,.97);
+  border: 1px solid #efeee8;
+  border-radius: 17px;
+  box-shadow: 0 10px 35px #26352b16;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-8px);
+  transition: opacity .25s ease, transform .25s ease, visibility .25s;
+}
+
+.soil-tooltip.open {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
+.tooltip-top {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-bottom: 15px;
+}
+
+.tooltip-color {
+  flex: 0 0 13px;
+  width: 13px;
+  height: 13px;
+  border-radius: 4px;
+  margin-top: 4px;
+}
+
+#tooltip-title {
+  margin: 0;
+  font-size: 18px;
+  line-height: 1.3;
+}
+
+.tooltip-section {
+  padding: 12px 0;
+  border-top: 1px solid #efeee8;
+}
+
+.tooltip-section h4 {
+  margin: 0 0 6px;
+  color: #829080;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-size: 9px;
+}
+
+.tooltip-section p {
+  margin: 0;
+  color: #687568;
+  font-size: 12px;
+  line-height: 1.65;
+}
+
+.tooltip-close {
+  margin-left: auto;
+  border: 0;
+  background: #f2f1ed;
+  color: #657064;
+  border-radius: 50%;
+  width: 27px;
+  height: 27px;
+  cursor: pointer;
+  font-size: 17px;
+  flex: 0 0 27px;
+}
+
+#info-panel {
+  position: absolute;
+  z-index: 1000;
+  top: 18px;
+  right: 18px;
+  bottom: 18px;
+  width: 360px;
+  max-width: calc(100% - 36px);
+  padding: 28px;
+  overflow-y: auto;
+  background: rgba(255,255,255,.98);
+  border: 1px solid #efeee8;
+  border-radius: 21px;
+  box-shadow: 0 12px 45px #26352b15;
+  transform: translateX(calc(100% + 30px));
+  visibility: hidden;
+  transition: transform .35s ease, visibility .35s;
+}
+
+#info-panel.open {
+  transform: translateX(0);
+  visibility: visible;
+}
+
+.close-button {
+  float: right;
+  border: 0;
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  background: #f2f1ed;
+  cursor: pointer;
+  font-size: 20px;
+}
+
+.panel-label {
+  margin: 12px 0 8px;
+  color: #91968e;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+#panel-title {
+  font-size: 29px;
+  line-height: 1.1;
+  letter-spacing: -1px;
+  overflow-wrap: anywhere;
+  margin: 0 0 25px;
+}
+
+.info-card {
+  margin-bottom: 12px;
+  padding: 17px;
+  border-radius: 14px;
+  background: #f6f5f1;
+}
+
+.info-card .label {
+  margin-bottom: 8px;
+  color: #91968e;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.info-card .value {
+  font-size: 15px;
+  line-height: 1.55;
+  overflow-wrap: anywhere;
+}
+
+.soil-main {
+  font-weight: 650;
+  color: #405c43;
+  font-size: 15px;
+  line-height: 1.55;
+}
+
+.soil-secondary {
+  margin-top: 8px;
+  color: #777e73;
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.notes textarea {
+  width: 100%;
+  min-height: 155px;
+  padding: 13px;
+  resize: vertical;
+  border: 1px solid #e3e1d9;
+  border-radius: 12px;
+  font: inherit;
+  font-size: 13px;
+  line-height: 1.6;
+  outline: none;
+}
+
+.notes textarea:focus { border-color: #8fa78f; }
+
+.note-status {
+  margin-top: 7px;
+  font-size: 11px;
+  color: #81897e;
+}
+
+#loading {
+  position: absolute;
+  z-index: 1500;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 30px;
+  text-align: center;
+  background: #f7f6f1;
+  color: #647261;
+}
+
+#loading p { font-size: 13px; }
+
+[hidden] { display: none !important; }
+
+.map-section.panel-open .soil-legend,
+.map-section.panel-open .soil-tooltip {
+  display: none;
+}
+
+@media (max-width: 700px) {
+  section { padding: 55px 22px; }
+
+  .map-section {
+    height: 78vh;
+    min-height: 570px;
+  }
+
+  .map-heading {
+    top: 12px;
+    left: 12px;
+    max-width: 230px;
+    padding: 14px;
+  }
+
+  .map-heading h2 { font-size: 16px; }
+  .map-heading p { font-size: 11px; }
+
+  .soil-legend {
+    left: 12px;
+    bottom: 52px;
+    width: 205px;
+    max-height: 220px;
+    padding: 12px;
+  }
+
+  .soil-tooltip {
+    top: 100px;
+    left: auto;
+    right: 12px;
+    bottom: auto;
+    width: min(290px, calc(100% - 24px));
+    max-height: 42%;
+    padding: 15px;
+  }
+
+  #info-panel {
+    top: auto;
+    left: 10px;
+    right: 10px;
+    bottom: 10px;
+    width: auto;
+    max-width: none;
+    height: 54%;
+    padding: 19px;
+    transform: translateY(calc(100% + 20px));
+  }
+
+  #info-panel.open { transform: translateY(0); }
+
+  .map-hint {
+    bottom: 12px;
+    left: 12px;
+  }
+
+  .map-section.panel-open .map-hint { display: none; }
+}
+</style>
+</head>
+
+<body>
+
+<section>
+  <div class="eyebrow">Spatial research · Amsterdam</div>
+  <h1>Understanding the Amsterdam Metropolitan Region</h1>
+  <p>
+    Here we can add a research question, context, or background information about the Amsterdam Metropolitan Region (MRA). 
+  </p>
+</section>
+
+<div class="map-section" id="map-section">
+
+  <div id="map"></div>
+
+  <div class="map-heading">
+    <h2>Explore the MRA</h2>
+    <p>Explore soil types using the legend. Select a neighbourhood to see its details.</p>
+  </div>
+
+  <div class="soil-legend" id="soil-legend">
+    <h3>Soil types</h3>
+    <div class="legend-subtitle">Hover or select a soil type · Sorted by frequency</div>
+    <div id="legend-items">Loading soil types…</div>
+  </div>
+
+  <div class="soil-tooltip" id="soil-tooltip" aria-live="polite">
+    <div class="tooltip-top">
+      <span class="tooltip-color" id="tooltip-color"></span>
+      <h3 id="tooltip-title">Soil type</h3>
+      <button class="tooltip-close" id="tooltip-close" aria-label="Close">×</button>
+    </div>
+
+    <div class="tooltip-section">
+      <h4>About this soil</h4>
+      <p id="tooltip-description">Description will be added here.</p>
+    </div>
+
+    <div class="tooltip-section">
+      <h4>Current production</h4>
+      <p id="tooltip-current">Information about current production will be added here.</p>
+    </div>
+
+    <div class="tooltip-section">
+      <h4>Potential alternative</h4>
+      <p id="tooltip-alternative">Information about alternative production will be added here.</p>
+    </div>
+  </div>
+
+  <div class="map-hint" id="map-hint">
+    Explore soil types in the legend · Click a neighbourhood for details
+  </div>
+
+  <div id="info-panel" aria-live="polite">
+
+    <button class="close-button" id="close-panel" aria-label="Close information panel">×</button>
+
+    <div class="panel-label">Selected neighbourhood</div>
+    <h2 id="panel-title">Neighbourhood</h2>
+
+    <div class="info-card">
+      <div class="label">Dominant soil type</div>
+      <div id="panel-soil">Select a neighbourhood to explore its soil.</div>
+    </div>
+
+    <div class="info-card">
+      <div class="label">Municipality</div>
+      <div class="value" id="panel-municipality">—</div>
+    </div>
+
+    <div class="notes">
+      <div class="panel-label">Research notes</div>
+      <textarea id="panel-notes" placeholder="Write your observations about this area..."></textarea>
+      <div class="note-status" id="note-status">Notes are saved in this browser.</div>
+    </div>
+
+  </div>
+
+  <div id="loading">
+    <div>
+      <strong>Loading spatial data…</strong>
+      <p id="loading-message">Preparing the MRA map.</p>
+    </div>
+  </div>
+
+</div>
+
+<section>
+  <div class="eyebrow">Analysis</div>
+  <h2>Our interpretation</h2>
+  <p>
+    Here we can add our findings, comparisons, methodology or conclusions here.
+  </p>
+</section>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<script>
+const GEOJSON_FILE = "data/MRA_BUURTEN_FINAL.geojson";
+const MUNICIPALITIES_FILE = "data/MRA_GEMEENTEN_PROJECT.geojson";
+
+const mapSection = document.getElementById("map-section");
+const panel = document.getElementById("info-panel");
+const loading = document.getElementById("loading");
+const loadingMessage = document.getElementById("loading-message");
+const tooltip = document.getElementById("soil-tooltip");
+
+const map = L.map("map", {
+  zoomControl: true,
+  attributionControl: false,
+  preferCanvas: true,
+  zoomSnap: 0.25
+});
+
+/* No basemap or external map tiles */
+
+const selectedStyle = {
+  color: "#294a33",
+  weight: 2.5,
+  opacity: 1,
+  fillColor: "#83a68a",
+  fillOpacity: 1
+};
+
+const municipalityStyle = {
+  color: "#526b54",
+  weight: 2.2,
+  opacity: 0.95,
+  fillOpacity: 0
+};
+
+let neighbourhoodLayer;
+let municipalityLayer;
+let regionBounds = null;
+let selectedLayer = null;
+let activeSoil = null;
+let hoveredSoil = null;
+let saveTimer = null;
+
+const soilColorMap = new Map();
+const soilCounts = new Map();
+
+/* Add your descriptions here.
+   Use the exact bodemklasse values from your GeoJSON as keys. */
+const soilInfo = {
+  "ADD EXACT SOIL TYPE NAME": {
+    description: "Add a description of this soil type here.",
+    currentProduction: "Describe what is currently produced or grown here.",
+    alternativeProduction: "Describe possible alternative production here."
+  }
+};
+
+const defaultSoilInfo = {
+  description: "Add information about the characteristics of this soil type.",
+  currentProduction: "Information about current production will be added here.",
+  alternativeProduction: "Information about potential alternative production will be added here."
+};
+
+async function loadJSON(filename) {
+  const response = await fetch(filename);
+
+  if (!response.ok) {
+    throw new Error(`Cannot load ${filename}. Check that it is in the same folder as index.html.`);
+  }
+
+  return response.json();
+}
+
+function property(properties, name) {
+  const key = Object.keys(properties || {}).find(
+    k => k.toLowerCase() === name.toLowerCase()
+  );
+
+  return key ? properties[key] : null;
+}
+
+function areaName(p) {
+  return property(p, "buurtnaam") || "Unnamed neighbourhood";
+}
+
+function municipalityName(p) {
+  return property(p, "gemeentenaam") || "Not available";
+}
+
+function soilName(feature) {
+  const value = property(feature.properties || {}, "bodemklasse");
+
+  if (value === null || value === undefined || String(value).trim() === "") {
+    return null;
+  }
+
+  return String(value).trim();
+}
+
+function noteKey(feature) {
+  const p = feature.properties || {};
+  const code = property(p, "buurtcode");
+
+  return `mra-note-${code || areaName(p)}`;
+}
+
+/* Count neighbourhoods per soil type and assign colours */
+function createSoilColours(data) {
+  soilCounts.clear();
+
+  data.features.forEach(feature => {
+    const soil = soilName(feature);
+
+    if (soil) {
+      soilCounts.set(soil, (soilCounts.get(soil) || 0) + 1);
+    }
+  });
+
+  const soilTypes = [...soilCounts.keys()].sort((a, b) => {
+    const countDifference = soilCounts.get(b) - soilCounts.get(a);
+    return countDifference !== 0 ? countDifference : a.localeCompare(b);
+  });
+
+  soilTypes.forEach((soil, index) => {
+    const hue = (index * 137.508) % 360;
+    const saturation = index % 2 === 0 ? 43 : 50;
+    const lightness = index % 3 === 0 ? 70 : 76;
+
+    soilColorMap.set(
+      soil,
+      `hsl(${hue}, ${saturation}%, ${lightness}%)`
+    );
+  });
+
+  renderLegend(soilTypes, data.features.length);
+}
+
+/* Build the legend in descending order of frequency */
+function renderLegend(soilTypes, totalNeighbourhoods) {
+  const container = document.getElementById("legend-items");
+  container.replaceChildren();
+
+  soilTypes.forEach(soil => {
+    const item = document.createElement("div");
+    item.className = "legend-item";
+    item.dataset.soil = soil;
+    item.tabIndex = 0;
+    item.setAttribute("role", "button");
+    item.setAttribute("aria-label", `Highlight ${soil}`);
+
+    const swatch = document.createElement("span");
+    swatch.className = "legend-swatch";
+    swatch.style.backgroundColor = soilColorMap.get(soil);
+
+    const label = document.createElement("span");
+    label.textContent = soil;
+
+    const count = document.createElement("span");
+    count.className = "legend-count";
+    count.textContent = soilCounts.get(soil);
+
+    item.append(swatch, label, count);
+
+    item.addEventListener("mouseenter", () => {
+      if (!activeSoil) {
+        hoveredSoil = soil;
+        showSoilType(soil);
+      }
+    });
+
+    item.addEventListener("mouseleave", () => {
+      if (!activeSoil) {
+        hoveredSoil = null;
+        clearSoilType();
+      }
+    });
+
+    item.addEventListener("focus", () => {
+      if (!activeSoil) {
+        hoveredSoil = soil;
+        showSoilType(soil);
+      }
+    });
+
+    item.addEventListener("blur", () => {
+      if (!activeSoil) {
+        hoveredSoil = null;
+        clearSoilType();
+      }
+    });
+
+    item.addEventListener("click", () => {
+      if (activeSoil === soil) {
+        activeSoil = null;
+        hoveredSoil = null;
+        clearSoilType();
+      } else {
+        activeSoil = soil;
+        hoveredSoil = null;
+        showSoilType(soil);
+      }
+    });
+
+    item.addEventListener("keydown", event => {
+      if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        item.click();
+      }
+    });
+
+    container.appendChild(item);
+  });
+
+  const missingCount = totalNeighbourhoods -
+    [...soilCounts.values()].reduce((sum, count) => sum + count, 0);
+
+  const missing = document.createElement("div");
+  missing.className = "legend-item";
+  missing.style.cursor = "default";
+
+  const missingSwatch = document.createElement("span");
+  missingSwatch.className = "legend-swatch";
+  missingSwatch.style.backgroundColor = "#e2e3df";
+
+  const missingLabel = document.createElement("span");
+  missingLabel.textContent = "No soil data";
+
+  const missingNumber = document.createElement("span");
+  missingNumber.className = "legend-count";
+  missingNumber.textContent = missingCount;
+
+  missing.append(missingSwatch, missingLabel, missingNumber);
+  container.appendChild(missing);
+}
+
+/* Default polygon style */
+function soilStyle(feature) {
+  const soil = soilName(feature);
+
+  return {
+    color: "#ffffff",
+    weight: 0.7,
+    opacity: 0.85,
+    fillColor: soil ? soilColorMap.get(soil) : "#e2e3df",
+    fillOpacity: 0.85
+  };
+}
+
+/* Highlight one soil type across the whole map */
+function showSoilType(soil) {
+  if (!neighbourhoodLayer) return;
+
+  neighbourhoodLayer.eachLayer(layer => {
+    const sameSoil = soilName(layer.feature) === soil;
+
+    if (sameSoil) {
+      layer.setStyle({
+        color: "#526b54",
+        weight: 1.6,
+        opacity: 1,
+        fillColor: soilColorMap.get(soil),
+        fillOpacity: 1
+      });
+    } else {
+      layer.setStyle({
+        color: "#d5d9d1",
+        weight: 0.4,
+        opacity: 0.35,
+        fillColor: "#e8eae5",
+        fillOpacity: 0.16
+      });
+    }
+  });
+
+  /* Exactly one legend item is active */
+  document.querySelectorAll(".legend-item[data-soil]").forEach(item => {
+    item.classList.toggle("active", item.dataset.soil === soil);
+  });
+
+  displaySoilTooltip(soil);
+}
+
+/* Show the soil information card */
+function displaySoilTooltip(soil) {
+  const info = soilInfo[soil] || defaultSoilInfo;
+
+  document.getElementById("tooltip-title").textContent = soil;
+  document.getElementById("tooltip-color").style.backgroundColor = soilColorMap.get(soil);
+  document.getElementById("tooltip-description").textContent = info.description;
+  document.getElementById("tooltip-current").textContent = info.currentProduction;
+  document.getElementById("tooltip-alternative").textContent = info.alternativeProduction;
+
+  tooltip.classList.add("open");
+}
+
+/* Restore the original map colours */
+function clearSoilType() {
+  if (!neighbourhoodLayer) return;
+
+  neighbourhoodLayer.eachLayer(layer => {
+    if (layer === selectedLayer) {
+      layer.setStyle(selectedStyle);
+    } else {
+      layer.setStyle(soilStyle(layer.feature));
+    }
+  });
+
+  document.querySelectorAll(".legend-item[data-soil]").forEach(item => {
+    item.classList.remove("active");
+  });
+
+  tooltip.classList.remove("open");
+}
+
+document.getElementById("tooltip-close").addEventListener("click", () => {
+  activeSoil = null;
+  hoveredSoil = null;
+  clearSoilType();
+});
+
+/* Display soil information in the neighbourhood panel */
+function showSoil(feature) {
+  const container = document.getElementById("panel-soil");
+  container.replaceChildren();
+
+  const p = feature.properties || {};
+  const specific = property(p, "bodemklasse");
+  const broad = property(p, "hoofdklasse");
+
+  if (!specific) {
+    const message = document.createElement("div");
+    message.className = "soil-main";
+
+    const water = property(p, "water");
+
+    message.textContent = water === "JA"
+      ? "Water area — no mapped soil"
+      : "Soil data unavailable";
+
+    container.appendChild(message);
+    return;
+  }
+
+  const main = document.createElement("div");
+  main.className = "soil-main";
+  main.textContent = specific;
+
+  const soilColor = soilColorMap.get(String(specific).trim());
+
+  if (soilColor) {
+    main.style.borderLeft = `4px solid ${soilColor}`;
+    main.style.paddingLeft = "10px";
+  }
+
+  container.appendChild(main);
+
+  if (broad && broad !== specific) {
+    const secondary = document.createElement("div");
+    secondary.className = "soil-secondary";
+    secondary.textContent = `Soil group: ${broad}`;
+    container.appendChild(secondary);
+  }
+}
+
+/* Select a neighbourhood */
+function selectNeighbourhood(feature, layer) {
+  activeSoil = null;
+  hoveredSoil = null;
+  clearSoilType();
+
+  selectedLayer = layer;
+  layer.setStyle(selectedStyle);
+
+  document.getElementById("panel-title").textContent =
+    areaName(feature.properties);
+
+  document.getElementById("panel-municipality").textContent =
+    municipalityName(feature.properties);
+
+  showSoil(feature);
+
+  const textarea = document.getElementById("panel-notes");
+  const key = noteKey(feature);
+
+  try {
+    textarea.value = localStorage.getItem(key) || "";
+  } catch (error) {
+    textarea.value = "";
+  }
+
+  textarea.oninput = () => {
+    clearTimeout(saveTimer);
+
+    saveTimer = setTimeout(() => {
+      try {
+        localStorage.setItem(key, textarea.value);
+        document.getElementById("note-status").textContent =
+          "Saved in this browser";
+      } catch (error) {
+        document.getElementById("note-status").textContent =
+          "Could not save notes in this browser";
+      }
+    }, 250);
+  };
+
+  panel.classList.add("open");
+  mapSection.classList.add("panel-open");
+  document.getElementById("map-hint").hidden = true;
+
+  map.flyToBounds(layer.getBounds(), {
+    paddingTopLeft: [35, 35],
+    paddingBottomRight: [390, 35],
+    maxZoom: 10.5,
+    duration: 1
+  });
+
+  if (municipalityLayer) {
+    municipalityLayer.bringToFront();
+  }
+}
+
+/* Close the neighbourhood panel */
+function closePanel() {
+  panel.classList.remove("open");
+  mapSection.classList.remove("panel-open");
+  document.getElementById("map-hint").hidden = false;
+
+  selectedLayer = null;
+  activeSoil = null;
+  hoveredSoil = null;
+  clearSoilType();
+
+  if (regionBounds) {
+    map.flyToBounds(regionBounds, {
+      padding: [65, 65],
+      duration: 0.8
+    });
+  }
+}
+
+document.getElementById("close-panel")
+  .addEventListener("click", closePanel);
+
+/* Load all spatial data */
+async function init() {
+  try {
+    if (typeof L === "undefined") {
+      throw new Error("Leaflet could not load. Check your internet connection.");
+    }
+
+    const [data, municipalityData] = await Promise.all([
+      loadJSON(GEOJSON_FILE),
+      loadJSON(MUNICIPALITIES_FILE)
+    ]);
+
+    if (!data.features || data.features.length === 0) {
+      throw new Error("The neighbourhood GeoJSON file contains no features.");
+    }
+
+    if (!municipalityData.features || municipalityData.features.length === 0) {
+      throw new Error("The municipality GeoJSON file contains no features.");
+    }
+
+    createSoilColours(data);
+
+    /* Municipality boundaries in a non-interactive top pane */
+    const municipalityPane = map.createPane("municipalityPane");
+    municipalityPane.style.zIndex = 450;
+    municipalityPane.style.pointerEvents = "none";
+
+    municipalityLayer = L.geoJSON(municipalityData, {
+      pane: "municipalityPane",
+      style: municipalityStyle,
+      interactive: false
+    }).addTo(map);
+
+    /* Neighbourhood polygons */
+    neighbourhoodLayer = L.geoJSON(data, {
+      style: soilStyle,
+
+      onEachFeature(feature, layer) {
+        layer.on("click", () => {
+          selectNeighbourhood(feature, layer);
+        });
+      }
+    }).addTo(map);
+
+    regionBounds = neighbourhoodLayer.getBounds();
+
+    if (!regionBounds.isValid()) {
+      throw new Error("Could not determine the MRA map boundaries.");
+    }
+
+    map.fitBounds(regionBounds, {
+      padding: [65, 65]
+    });
+
+    map.setMaxBounds(regionBounds.pad(0.12));
+    map.setMinZoom(map.getBoundsZoom(regionBounds) - 0.25);
+    map.options.maxBoundsViscosity = 0.85;
+
+    loading.hidden = true;
+
+  } catch (error) {
+    console.error(error);
+    loadingMessage.textContent = error.message;
+  }
+}
+
+init();
+</script>
+</body>
+</html>
