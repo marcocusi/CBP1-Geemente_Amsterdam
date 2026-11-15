@@ -1,13 +1,2 @@
 # CBP Food Transition Amsterdam
-## Index
-### Google Drive
-https://drive.google.com/drive/folders/1l5EV0FMl83YtRiysL-CitpJMCcYxNbSV?usp=share_link
-### MyBIB References
-https://www.mybib.com/#/?sharingCode=MoldyOverwroughtGnu86
-COLOR CODES: 
-Purple: land use
-Red: Society
-### Overleaf LaTex
-https://www.overleaf.com/project/6ac8a85e9907ab74054e891a/share#3d987a4512cc7b9f2d43a020b4af8710370e3310b602789f
-### Project Management
-https://www.monday.com
+This is a clone of the project repository from The Vegan Allies on The Protein Transition towards the 2030 goals of the Municipality of Amsterdam. It will be updated regularly from the main repository for the submissions.
